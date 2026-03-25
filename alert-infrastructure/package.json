@@ -1,0 +1,26 @@
+{
+  "name": "alert-infrastructure",
+  "version": "1.0.0",
+  "description": "Supabase Edge Function for Firebase Push Notifications",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "supabase functions serve send-notification",
+    "deploy": "supabase functions deploy send-notification",
+    "db:push": "supabase db push",
+    "db:pull": "supabase db pull"
+  },
+  "keywords": [
+    "supabase",
+    "firebase",
+    "edge-functions",
+    "notifications"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "supabase": "^1.170.0"
+  },
+  "devDependencies": {}
+}

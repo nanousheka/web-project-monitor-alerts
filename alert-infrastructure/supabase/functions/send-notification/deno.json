@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "firebase-admin/": "https://deno.land/x/firebase@v4.8.1/",
+    "std/": "https://deno.land/std@0.208.0/"
+  }
+}
