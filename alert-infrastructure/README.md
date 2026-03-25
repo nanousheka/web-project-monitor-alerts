@@ -1,19 +1,17 @@
-# Alert Infrastructure : Supabase + Firebase
+# Alert Infrastructure — Neon + Vercel + Firebase
 
-Supabase Edge Function that sends Firebase push notifications when alerts are created.
+Vercel Serverless Function that inserts alerts into Neon (PostgreSQL) and sends Firebase FCM push notifications.
 
 ## Architecture
 
 ```
-Alert Created in DB
+POST /api/send-notification
         ↓
-  Trigger fires
+  Insert alert → Neon DB
         ↓
-Edge Function: send-notification
+  Query device tokens ← Neon DB
         ↓
-Queries user device tokens
-        ↓
-  Sends via Firebase FCM
+  Send via Firebase FCM
         ↓
   Notification on phone
 ```
@@ -22,119 +20,105 @@ Queries user device tokens
 
 ### 1. Prerequisites
 
-- Supabase project (created)
-- Firebase project (created)
-- Supabase CLI: `npm install -g supabase`
+- [Neon](https://neon.tech) project (free tier works)
+- [Firebase](https://console.firebase.google.com) project with FCM enabled
+- [Vercel](https://vercel.com) account
 - Node.js 18+
 
-### 2. Clone & Install
+### 2. Install
 
 ```bash
-git clone <your-repo>
 cd alert-infrastructure
 npm install
-supabase login
-supabase link --project-id=your-project-id
 ```
 
-### 3. Add Firebase Secret
+### 3. Create tables in Neon
 
-1. Go to Supabase Dashboard
-2. Settings → Secrets
-3. Create secret:
-   - Name: `FIREBASE_KEY_JSON`
-   - Value: (paste entire firebase-key.json content)
-
-### 4. Create Database Tables
+Run the migration in the Neon SQL editor or via psql:
 
 ```bash
-supabase db push
+psql $DATABASE_URL -f migrations/001_create_tables.sql
 ```
 
-This creates:
-- `user_fcm_tokens` (device tokens)
-- `alerts` (events)
-
-### 5. Deploy Edge Function
+### 4. Configure environment variables
 
 ```bash
-supabase functions deploy send-notification
+cp .env.example .env.local
+# Fill in DATABASE_URL and FIREBASE_KEY_JSON
+```
+
+Add the same variables to Vercel:
+
+```bash
+vercel env add DATABASE_URL
+vercel env add FIREBASE_KEY_JSON
+```
+
+### 5. Deploy
+
+```bash
+npm run deploy
 ```
 
 ### 6. Test
 
 ```bash
-# Local test
-supabase functions serve send-notification
-
-# In another terminal:
-curl -X POST http://localhost:54321/functions/v1/send-notification \
+curl -X POST https://your-app.vercel.app/api/send-notification \
   -H "Content-Type: application/json" \
   -d '{
-    "type": "INSERT",
-    "table": "alerts",
-    "record": {
-      "id": "test-123",
-      "event_id": "TEST_001",
-      "event_type": "TEST",
-      "severity": "sev_2_high",
-      "title": "Test Alert",
-      "description": "This is a test",
-      "linked_pra_section": "TEST_001",
-      "user_id": "inès",
-      "metrics": {}
-    }
+    "event_id": "TEST_001",
+    "event_type": "TEST",
+    "severity": "sev_2_high",
+    "title": "Test Alert",
+    "description": "Check your phone!",
+    "user_id": "inès"
   }'
 ```
 
 ## Usage
 
-### Register Device Token
+### Register a device token
 
 ```sql
 INSERT INTO user_fcm_tokens (user_id, device_token, device_name)
-VALUES ('inès', 'YOUR_FIREBASE_DEVICE_TOKEN', 'My Phone');
+VALUES ('inès', 'YOUR_FCM_DEVICE_TOKEN', 'My Phone');
 ```
 
-### Create Alert (triggers notification)
+### Create an alert + send notification
 
-```sql
-INSERT INTO alerts (event_id, event_type, severity, title, description, user_id, linked_pra_section)
-VALUES (
-  'PERF_001',
-  'PERF',
-  'sev_2_high',
-  'Lighthouse Score Dropped',
-  'Score fell from 85 to 62',
-  'inès',
-  'PERF_001'
-);
-
--- Notification should arrive on your phone in <1 second
+```bash
+curl -X POST https://your-app.vercel.app/api/send-notification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_id": "PERF_001",
+    "event_type": "PERF",
+    "severity": "sev_2_high",
+    "title": "Lighthouse Score Dropped",
+    "description": "Score fell from 85 to 62",
+    "user_id": "inès",
+    "linked_pra_section": "PERF_001",
+    "metrics": { "before": 85, "after": 62 }
+  }'
 ```
+
+## Severity levels
+
+| Severity         | FCM Channel     | Priority | Sound |
+|------------------|-----------------|----------|-------|
+| `sev_1_critical` | alerts_critical | high     | yes   |
+| `sev_2_high`     | alerts_high     | high     | yes   |
+| `sev_3_medium`   | alerts_medium   | normal   | no    |
+| `sev_4_low`      | alerts_low      | normal   | no    |
 
 ## Files
 
-- `supabase/functions/send-notification/index.ts` - Main edge function
-- `supabase/functions/send-notification/deno.json` - Dependencies
-- `supabase/migrations/` - Database migrations
-
-## Environment Variables
-
-See `.env.example`
+- `api/send-notification.ts` — Vercel serverless function
+- `migrations/001_create_tables.sql` — PostgreSQL tables for Neon
+- `vercel.json` — Vercel configuration
+- `.env.example` — Required environment variables
 
 ## Security
 
-- ✅ Firebase credentials stored in Supabase Secrets (never in Git)
-- ✅ Service role key used for database access
-- ✅ Device tokens validated by Firebase
-- ✅ Invalid tokens automatically marked inactive
-
-## Next Steps
-
-1. Deploy to Supabase
-2. Register device tokens
-3. Create alerts to test
-4. Monitor function logs in Supabase Dashboard
-
-For more info, see `SETUP.md`
+- ✅ Firebase credentials stored in Vercel env vars (never in Git)
+- ✅ Neon connection string stored in Vercel env vars (never in Git)
+- ✅ Invalid FCM tokens automatically deactivated

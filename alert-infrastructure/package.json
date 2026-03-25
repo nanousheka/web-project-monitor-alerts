@@ -1,26 +1,27 @@
 {
   "name": "alert-infrastructure",
-  "version": "1.0.0",
-  "description": "Supabase Edge Function for Firebase Push Notifications",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "Vercel Serverless Function — Firebase push notifications via Neon (PostgreSQL)",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "supabase functions serve send-notification",
-    "deploy": "supabase functions deploy send-notification",
-    "db:push": "supabase db push",
-    "db:pull": "supabase db pull"
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
   "keywords": [
-    "supabase",
+    "neon",
+    "vercel",
     "firebase",
-    "edge-functions",
+    "serverless",
     "notifications"
   ],
-  "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "supabase": "^1.170.0"
+    "@neondatabase/serverless": "^0.10.4",
+    "@vercel/node": "^5.0.0",
+    "firebase-admin": "^13.0.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
 }
