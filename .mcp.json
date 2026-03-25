@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["-y", "@neondatabase/mcp-server-neon", "start"],
       "env": {
-        "NEON_API_KEY": "napi_w8rbcnvqzaks4cu1p1vlxqf9cq6h09wyg7g7i4gu7w6jf3gy0xo5d4if41mzo1na"
+        "NEON_API_KEY": "${NEON_API_KEY}"
       }
     }
   }
